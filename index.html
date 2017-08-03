@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+
+	<style>
+		.node {
+		  cursor: pointer;
+		}
+
+		.node circle {
+		  fill: #fff;
+		  stroke: steelblue;
+		  stroke-width: 1.5px;
+		}
+
+		.node text {
+		  font: 10px sans-serif;
+		}
+
+		.link {
+		  fill: none;
+		  stroke: #ccc;
+		  stroke-width: 1.5px;
+		}
+	</style>
+
+	<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/angularjs/1.6.4/angular.js"></script>
+    <script type="text/javascript" src="lib/d3.v4.js"></script>
+    <script type="text/javascript" src="lib/ui-bootstrap-tpls-2.5.0.js"></script>
+
+	<body>
+		<div class="jumbotron text-center">
+			<h1>Ping-pong Plotter</h1>
+			<br/>
+			<p>A experimental tool to visualize large datasets using trees and pie-charts.</p> 		
+		</div>
+
+		<div class="container">
+
+			<div ng-app="pingpongApp" ng-controller="mainCtrl">
+
+	<!--			
+				<p>Name: <input type="text" ng-model="name"></p>
+
+
+				<form enctype="multipart/form-data" action="/upload/image" method="post">
+					<input id="image-file" type="file" />
+				</form>
+
+				<div ng-if="data">
+					<p>{{data.length}}</p>  
+				</div>
+	-->
+
+				<div class="row">
+				<div class="col-sm-4">
+
+				<uib-accordion close-others="oneAtATime">
+
+					<div uib-accordion-group class="panel-default" heading="Dataset" is-open="panel.isDatasetOpen">
+						<select class="form-control" ng-model="panel.selectedDataset" ng-options='o for o in panel.datasets' ng-change="loadDataset()"></select>
+					</div>
+
+					<div uib-accordion-group class="panel-default" heading="Pie-chart options" is-open="panel.isPieOpen">
+			
+						<select class="form-control" ng-model="panel.selectedPie" ng-options='o as o.displayName group by o.type for o in columns' ng-change="updateTree()"></select>
+	
+						<p> Type: {{ panel.selectedPie.type }} </p>
+
+						<div ng-if='panel.selectedPie.type == "Numeric"'>
+							<div class="row">
+								<div class="col-sm-6">
+									<p> Quantiles: </p>
+								</div>
+
+								<div class="col-sm-6">
+									<select class="form-control" ng-model="panel.pieQuantiles" ng-options='i for i in [1, 2, 3, 4, 5, 6, 7, 8]' ng-change="updateTree()"></select>
+								</div>
+							</div>
+						</div>
+
+						<p ng-if="panel.selectedPie"> Legend: 
+							<div class="row" ng-repeat="x in pieQuantiles">
+								<div class="col-sm-4"></div>
+								<div class="col-sm-2" style="background-color: {{ x.color }}; color: {{ x.color }}">
+									color
+								</div>
+								<div class="col-sm-6">
+									{{x.name}}
+								</div>
+							</div>
+						</p>
+					</div>
+
+					<div uib-accordion-group class="panel-default" heading="Tree options" is-open="panel.isColumnsOpen">
+
+						<!-- <select class="form-control" ng-model="panel.selectedClass" ng-options='o as o.displayName group by o.type for o in columns' ng-change="updateTree()"></select> -->
+
+						<!--
+						<div ng-repeat="col in columns">
+							<div class="row" ng-if="col.num <= 10">
+								<div class="col-sm-6">
+									<button type="button" class="btn btn-primary" ng-model="col.checked" uib-btn-checkbox btn-checkbox-true="1" btn-checkbox-false="0" ng-click="updateTree()"> {{col.name}}</button>
+								</div>							
+								<div class="col-sm-6">
+									<p>{{col.num}}</p>
+								</div>							
+							</div>
+						</div>
+						-->
+
+						<div ng-repeat="col in columns | orderBy: 'type'">
+							<div class="row" ng-if="col.isValid">
+								<div class="col-sm-6">
+	<!--								<button type="button" class="btn btn-primary" ng-model="col.checked" uib-btn-checkbox btn-checkbox-true="1" btn-checkbox-false="0" ng-change="updateTree()">
+										<
+									</button>							-->
+									<div class="checkbox">
+									  <label><input type="checkbox" ng-model="col.checked" ng-change="updateTree()">{{col.displayName}}</label>
+									</div>
+								</div>							
+								<div class="col-sm-3">
+									<p>{{col.type}}</p>
+								</div>							
+								<div class="col-sm-3">
+									<select ng-if='col.type == "Numeric"' class="form-control" ng-model="col.quantiles" ng-options='i for i in [1, 2, 3, 4, 5, 6, 7, 8]' ng-change="updateTree()"></select>
+								</div>							
+							</div>
+						</div>
+
+
+					</div>
+
+				</uib-accordion>
+
+				</div> <!--col-sm-4-->
+
+				<div class="col-sm-8">
+
+					<!--<uib-tabset active="active">
+						<uib-tab index="0" heading="Ping-pong">
+							<pingpong-vis></pingpong-vis>
+						</uib-tab>
+						<uib-tab index="1" heading="Table">
+						</uib-tab>
+					</uib-tabset>-->
+
+				<uib-accordion close-others="oneAtATime">
+					<div uib-accordion-group class="panel-default" heading="Ping-pong plot" is-open="true">
+						<pingpong-vis></pingpong-vis>
+					</div>
+				</uib-accordion>
+
+				</div> <!--col-sm-8-->
+				</div> <!--row-->
+
+			</div>
+
+		</div>
+
+		<div class="footer text-center">
+			<p> Made with <a href="https://angularjs.org/">Angular.js</a> and <a href="https://d3js.org/">D3.js</a>.
+			 &copy; 2017 Daniel Neves </p>
+		</div>
+
+	</body>
+
+	<script type="text/javascript" src="js/app.js?4"></script>
+	<script type="text/javascript" src="js/services.js?4"></script>
+	<script type="text/javascript" src="js/controllers.js?6"></script>
+	<script type="text/javascript" src="js/directives.js?4"></script>
+	<script type="text/javascript" src="js/pingpongDirective.js?6"></script>
+
+</html>
