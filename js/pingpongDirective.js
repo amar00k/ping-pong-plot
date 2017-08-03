@@ -1,14 +1,14 @@
 'use strict';
 
 angular.module('pingpongApp')
-	.directive('pingpongVis', function() {
+	.directive('pingpongVis', [ '$window', function(window) {
 		return {
 			restrict: 'EA',
 			terminal: true,
 			link: function(scope, element, attrs) {
 				// Set the dimensions and margins of the diagram
 				var margin = {top: 20, right: 200, bottom: 30, left: 90},
-					width = 860 - margin.left - margin.right,
+					width = 1000 - margin.left - margin.right,
 					height = 800 - margin.top - margin.bottom;
 
 				// append the svg object to the body of the page
@@ -16,8 +16,8 @@ angular.module('pingpongApp')
 				// moves the 'group' element to the top left margin
 				var svg = d3.select(element[0])
 					.append("svg")
-					.attr("width", width + margin.right + margin.left)
-					.attr("height", height + margin.top + margin.bottom)
+					.attr("width", width)
+					.attr("height", height)
 					.append("g")
 					.attr("transform", "translate("
 						  + margin.left + "," + margin.top + ")");
@@ -29,16 +29,14 @@ angular.module('pingpongApp')
 				// declares a tree layout and assigns the size
 				var treemap = d3.tree().size([height, width]);
 
-				// on window resize, re-render d3 canvas
-				window.onresize = function() {
-					return scope.$apply();
-				};
+				// watch for window resize
+				angular.element(window).on('resize', function resize() {
+					width = element.parent()[0].clientWidth - margin.left - margin.right;
 
-//				scope.$watch(function(){
-//					return angular.element(window)[0].innerWidth;
-//				}, function() {
-//					return scope.render(scope.treedata);
-//				});
+					svg.attr("width", width);
+
+					scope.render()
+				});
 
 				// watch for data changes and re-render
 				scope.$watch('treedata', function(newVals, oldVals) {
@@ -46,10 +44,13 @@ angular.module('pingpongApp')
 				}, true);
 
 				// define render function
-				scope.render = function(treedata){
+				scope.render = function(treedata) {
+					width = element.parent()[0].clientWidth - margin.left - margin.right;
+
+					treemap = d3.tree().size([height, width]);
+
 					if (!scope.treedata)
 						return;
-
 					
 					  // Creates a curved (diagonal) path from parent to the child nodes
 					  function diagonal(s, d) {
@@ -225,8 +226,10 @@ angular.module('pingpongApp')
 						}
 					}
 				};
-        }
-      };
-    })
+        	}
+
+
+		};
+    }])
 
 
